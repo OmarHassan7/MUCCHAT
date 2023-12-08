@@ -8,8 +8,10 @@ if ($mysqli->connect_error) {
 }
 
 // Retrieve messages from the database based on the specified category
-$channel_id = isset($_GET['channel_id']) ? $_GET['channel_id'] : 'General';
-$stmt = $mysqli->prepare("SELECT * FROM messages WHERE channel_id = ? ORDER BY timestamp DESC");
+$channel_id = isset($_GET['channel_id']) ? $_GET['channel_id'] : 'akjshdksajdlksad';
+
+
+$stmt = $mysqli->prepare("SELECT * FROM messages WHERE channel_id = ?  ");
 $stmt->bind_param("s", $channel_id);
 $stmt->execute();
 $result = $stmt->get_result();

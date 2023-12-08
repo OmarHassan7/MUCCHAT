@@ -108,7 +108,7 @@ $conn->close();
     <script>
         const ws = new WebSocket('ws://localhost:8080?username=<?php echo $name; ?>&user_id=<?php echo $user_id ?> ');
         const userName = "<?php echo $name; ?>";
-        let currentChannel = "General";
+        let currentChannel = "akjshdksajdlksad";
 
         function sendMessage() {
             const messageInput = document.getElementById('message-input');
@@ -185,7 +185,7 @@ $conn->close();
 
             const onlineUsersList = document.getElementById('online-users-list');
             const categorySelect = document.getElementById('category-select');
-            console.log({
+            console.log("a7a", {
                 onlineUsers
             });
             console.log(onlineUsers[1]);
@@ -218,39 +218,39 @@ $conn->close();
                     })
                     clearChatMessages();
 
-                    let option = categorySelect.querySelector(`option[value="${username}"]`);
-                    if (!option) {
-                        option = document.createElement('option');
-                        option.value = username;
-                        option.textContent = username;
-                        categorySelect.appendChild(option);
+                    // let option = categorySelect.querySelector(`option[value="${username}"]`);
+                    // if (!option) {
+                    //     option = document.createElement('option');
+                    //     option.value = username;
+                    //     option.textContent = username;
+                    //     categorySelect.appendChild(option);
 
-                        // Create a new conversation link
-                        const conversationLink = document.createElement('a');
-                        conversationLink.href = '#';
-                        conversationLink.setAttribute('data-channel', username);
-                        conversationLink.setAttribute('data-username', username);
-                        conversationLink.setAttribute('data-userid', user_id);
-                        conversationLink.textContent = username;
-                        conversationLink.classList.add('conversation-link');
+                    //     // Create a new conversation link
+                    //     const conversationLink = document.createElement('a');
+                    //     conversationLink.href = '#';
+                    //     conversationLink.setAttribute('data-channel', username);
+                    //     conversationLink.setAttribute('data-username', username);
+                    //     conversationLink.setAttribute('data-userid', user_id);
+                    //     conversationLink.textContent = username;
+                    //     conversationLink.classList.add('conversation-link');
 
-                        // Add click event listener to the new conversation link
-                        conversationLink.addEventListener('click', function(event) {
-                            event.preventDefault();
-                            const channel = this.getAttribute('data-channel');
-                            currentChannel = channel;
-                            loadMessages(currentChannel);
-                        });
+                    //     // Add click event listener to the new conversation link
+                    //     conversationLink.addEventListener('click', function(event) {
+                    //         event.preventDefault();
+                    //         const channel = this.getAttribute('data-channel');
+                    //         currentChannel = channel;
+                    //         loadMessages(currentChannel);
+                    //     });
 
-                        // Append the new conversation link to the conversations list
-                        document.getElementById('sidebar').insertBefore(conversationLink, document.getElementById('online-users-container'));
-                    }
+                    //     // Append the new conversation link to the conversations list
+                    //     document.getElementById('sidebar').insertBefore(conversationLink, document.getElementById('online-users-container'));
+                    // }
 
-                    option.selected = true;
-                    event.preventDefault();
-                    const channel = this.getAttribute('data-channel');
-                    currentChannel = channel;
-                    // loadMessages(currentChannel);
+                    // option.selected = true;
+                    // event.preventDefault();
+                    // const channel = this.getAttribute('data-channel');
+                    // currentChannel = channel;
+                    // // loadMessages(currentChannel);
                 });
 
                 listItem.appendChild(link);
@@ -365,9 +365,12 @@ $conn->close();
             console.log({
                 channels
             })
+
+            const x = channels.filter(chann => chann.name != "");
+            console.log(x);
             const channelsContainer = document.getElementById("channels");
             channelsContainer.innerHTML = "";
-            channels.forEach(channel => {
+            x.forEach(channel => {
                 const elem = document.createElement("div");
                 elem.className = "conversation-link"
                 elem.textContent = channel.name;
@@ -378,21 +381,26 @@ $conn->close();
                     const channel_id = this.getAttribute('data-channel-id');
                     currentChannel = channel_id;
                     window.current_channel_id = channel_id;
-                    console.log("cllll", channel_id)
-                    loadMessages(currentChannel);
+                    console.log("cllll", channel_id);
+                    loadMessages(channel_id);
                 });
                 channelsContainer.appendChild(elem);
             })
         }
 
         function loadChannels() {
-            fetch(`functions/get_channels.php`).then(res => res.json()).then(renderChannels)
+            fetch(`functions/get_channels.php`).then(res => res.json()).then(channels => {
+                // Added Logic to filer Channels 
+                const y = channels.filter(ch => ch.name !== "Generals" ?
+                    ch.name.includes(userName) : "Generals");
+                renderChannels(y);
+            })
         }
 
         function loadMessages(channel_id) {
             clearChatMessages();
-
-            fetch(`functions/get_messages.php?channelId=${encodeURIComponent(channel_id)}`).then(res => res.json()).then(messages =>
+            console.log(channel_id);
+            fetch(`functions/get_messages.php?channel_id=${encodeURIComponent(channel_id)}`).then(res => res.json()).then(messages =>
                 messages.reverse().forEach(function(message) {
                     const isCurrentUser = message.sender === userName;
                     const userClass = isCurrentUser ? 'user-message' : 'other-message';
