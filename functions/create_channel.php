@@ -54,9 +54,11 @@ function createParticipantRow($participantsData)
 
   // If a row with the same participants exists, return the message
   if ($stmtCheck->num_rows > 0) {
+    $stmtCheck->bind_result($existingId);
+    $stmtCheck->fetch();
     $stmtCheck->close();
     $conn->close();
-    return ["message" => "Already exists"];
+    return ["message" => "Already exists", "channel_id" => $existingId];
   }
 
   // Generate a random ID of 24 characters

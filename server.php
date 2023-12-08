@@ -57,8 +57,13 @@ $conn->close();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live Chat</title>
+    <title>Live Chat [<?php echo    $name; ?>]</title>
     <link rel="stylesheet" href="./chat-style.css" />
+    <style>
+        .current {
+            background-color: #ccc !important;
+        }
+    </style>
 </head>
 
 <body>
@@ -91,12 +96,12 @@ $conn->close();
             <div id="chat-messages"></div>
             <div>
                 <input type="text" id="message-input" placeholder="Type your message..." class="input">
-                <select id="category-select">
+                <!-- <select id="category-select">
                     <option value="General">General</option>
                     <option value="Engineering">Engineering</option>
                     <option value="PhysicalTherapy">Physical Therapy</option>
                     <option value="Business">Business</option>
-                </select>
+                </select> -->
                 <!-- Add input field for shift value -->
                 <label for="shift-input">Shift Value:</label>
                 <input type="number" id="shift-input" min="1" value="3" class="input">
@@ -108,38 +113,39 @@ $conn->close();
     <script>
         const ws = new WebSocket('ws://localhost:8080?username=<?php echo $name; ?>&user_id=<?php echo $user_id ?> ');
         const userName = "<?php echo $name; ?>";
-        let currentChannel = "akjshdksajdlksad";
+        const userId = "<?php echo $user_id; ?>";
+        window.onload = async function() {
+            await loadChannels();
+            console.log("aaaa", window.current_channel_id);
+            loadMessages(window.current_channel_id);
+            document.getElementById('welcome-message').style.display = 'block';
+            loadOnlineUsers();
+        };
 
         function sendMessage() {
             const messageInput = document.getElementById('message-input');
             const categorySelect = document.getElementById('category-select');
             const shiftInput = document.getElementById('shift-input'); // Get the shift input
             const message = messageInput.value.trim();
-            const category = categorySelect.value || "General";
+            // const category = categorySelect.value || "General";
             shiftValue = parseInt(shiftInput.value) || 3; // Get the shift value or default to 3
 
             // Function to encrypt a message using Caesar cipher with the specified shift value
-            function encryptMessage(text, shift) {
-                return [...text]
-                    .map(char => {
-                        const charCode = char.charCodeAt(0);
-                        if (charCode >= 65 && charCode <= 90) {
-                            return String.fromCharCode((charCode - 65 + shift) % 26 + 65); // Uppercase letters
-                        } else if (charCode >= 97 && charCode <= 122) {
-                            return String.fromCharCode((charCode - 97 + shift) % 26 + 97); // Lowercase letters
-                        } else {
-                            return char; // Non-alphabetic characters
-                        }
-                    })
-                    .join('');
-            }
-
+            // function encryptMessage(text, shift) {
+            //     return [...text]
+            //         .map(char => {
+            //             const charCode = char.charCodeAt(0);
+            //             if (charCode >= 65 && charCode <= 90) {
+            //                 return String.fromCharCode((charCode - 65 + shift) % 26 + 65); // Uppercase letters
+            //             } else if (charCode >= 97 && charCode <= 122) {
+            //                 return String.fromCharCode((charCode - 97 + shift) % 26 + 97); // Lowercase letters
+            //             } else {
+            //                 return char; // Non-alphabetic characters
+            //             }
+            //         })
+            //         .join('');
+            // }
             if (message !== '') {
-                // Encrypt the message using Caesar cipher with the specified shift value
-                // const encryptedMessage = encryptMessage(message, shiftValue);
-
-                // const fullMessage = `${userName}:${category}:${encryptedMessage}`;
-                // ws.send(fullMessage);
 
                 const data = {
                     sender: encodeURIComponent(userName),
@@ -158,13 +164,19 @@ $conn->close();
                             throw new Error('Network response was not ok');
                         }
                         return response.text();
+                    }).then(() => {
+                        const x = JSON.stringify({
+                            event: `message`,
+                            data: {
+                                sender: userName,
+                                channel_id: window.current_channel_id,
+                                message: message
+                            }
+                        })
+                        ws.send(x);
                     })
-                // const xhr = new XMLHttpRequest();
-                // xhr.open('POST', 'insert_message.php', true);
-                // xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
-                // xhr.send(`sender=${encodeURIComponent(userName)}&message=${encodeURIComponent(encryptedMessage)}&category=${encodeURIComponent(category)}`);
-
                 messageInput.value = '';
+                loadChannels();
             }
         }
         // assume model is DB
@@ -189,7 +201,7 @@ $conn->close();
                 onlineUsers
             });
             console.log(onlineUsers[1]);
-            onlineUsers.forEach(({
+            onlineUsers.filter(x => x.name !== userName).forEach(({
                 name: username,
                 user_id
             }) => {
@@ -215,7 +227,21 @@ $conn->close();
                                 name: elem.getAttribute("data-username")
                             }]
                         })
+                    }).then(response => response.json()).then(response => {
+                        console.log({
+                            response
+                        })
+                        if (response.message === "Already exists") {
+                            window.current_channel_id = response.channel_id;
+                            console.log(window.current_channel_id);
+                            loadChannels();
+                            loadMessages(window.current_channel_id);
+                        } else {
+                            loadChannels();
+                            loadMessages()
+                        }
                     })
+
                     clearChatMessages();
 
                     // let option = categorySelect.querySelector(`option[value="${username}"]`);
@@ -303,6 +329,7 @@ $conn->close();
                 .map(char => {
                     const charCode = char.charCodeAt(0);
                     if (charCode >= 65 && charCode <= 90) {
+                        QqQ
                         return String.fromCharCode(((charCode - 65 - shift + 26 * 999999999) % 26) + 65); // Uppercase letters
                     } else if (charCode >= 97 && charCode <= 122) {
                         return String.fromCharCode(((charCode - 97 - shift + 26 * 999999999) % 26) + 97); // Lowercase letters
@@ -322,16 +349,26 @@ $conn->close();
                 sendMessage();
             }
         });
-
+        // ws.onopen(function() {
+        //     console.log("Clinet Connected");
+        // })
         ws.onmessage = function(e) {
             const {
                 event,
                 data
             } = JSON.parse(e.data);
+            console.log("WebSocket Message Received:", e.data);
 
             switch (event) {
                 case "online_users":
                     return updateOnlineUsers(data);
+                case "message":
+                    const {
+                        sender, channel_id, message
+                    } = data;
+                    // appendMessage(`${sender} (${category}): ${message}`);
+                    loadMessages(window.current_channel_id);
+                    break;
                 default:
                     throw new Error("unhandled case");
             }
@@ -354,17 +391,12 @@ $conn->close();
             // }
         };
 
-        window.onload = function() {
-            loadChannels();
-            loadMessages(currentChannel);
-            document.getElementById('welcome-message').style.display = 'block';
-            loadOnlineUsers();
-        };
+
+        // اشتغلت بطريقة وسخه 
+
 
         function renderChannels(channels) {
-            console.log({
-                channels
-            })
+
 
             const x = channels.filter(chann => chann.name != "");
             console.log(x);
@@ -372,28 +404,52 @@ $conn->close();
             channelsContainer.innerHTML = "";
             x.forEach(channel => {
                 const elem = document.createElement("div");
-                elem.className = "conversation-link"
-                elem.textContent = channel.name;
+                elem.className = window.current_channel_id === channel.id ? "conversation-link current" : "conversation-link ";
+                elem.textContent = channel.name.split("_").filter(x => x != userName)[0] || "self";
                 elem.setAttribute("data-channel-id", channel.id);
                 elem.addEventListener('click', function(event) {
 
                     event.preventDefault();
                     const channel_id = this.getAttribute('data-channel-id');
-                    currentChannel = channel_id;
                     window.current_channel_id = channel_id;
-                    console.log("cllll", channel_id);
+                    loadChannels();
                     loadMessages(channel_id);
+                    window.current_channel_id = channel_id;
                 });
                 channelsContainer.appendChild(elem);
             })
         }
 
         function loadChannels() {
-            fetch(`functions/get_channels.php`).then(res => res.json()).then(channels => {
+            return fetch(`functions/get_channels.php`).then(res => res.json()).then(channels => {
                 // Added Logic to filer Channels 
-                const y = channels.filter(ch => ch.name !== "Generals" ?
-                    ch.name.includes(userName) : "Generals");
+                console.log({
+                    userId: +userId,
+                    channels
+                })
+                const getMajorById = (userId) => {
+                    switch (userId.substring(0, 4)) {
+                        case "2211":
+                            return "Physical Therapy";
+                        case "2212":
+                            return "Engineering";
+                        case "2213":
+                            return "Business";
+
+                        default:
+                            return "Employess";
+                    }
+                }
+                const y = channels.filter(ch => ch.is_private ?
+                    ch.participants.includes(+userId) :
+                    ch.name === "General" ? true :
+                    ch.name === getMajorById(userId) ? true : false
+                );
+                console.log("bbbbb", channels[0], channels[0].id)
+                if (!window.current_channel_id)
+                    window.current_channel_id = channels[0].id;
                 renderChannels(y);
+                // loadMessages(window.current_channel_id)
             })
         }
 
@@ -401,14 +457,12 @@ $conn->close();
             clearChatMessages();
             console.log(channel_id);
             fetch(`functions/get_messages.php?channel_id=${encodeURIComponent(channel_id)}`).then(res => res.json()).then(messages =>
-                messages.reverse().forEach(function(message) {
+                messages.forEach(function(message) {
                     const isCurrentUser = message.sender === userName;
                     const userClass = isCurrentUser ? 'user-message' : 'other-message';
-                    appendMessage(`${message.sender} (${message.category}): ${message.message}`, userClass);
+                    appendMessage(`${message.sender} : ${message.message}`, userClass);
                 })
             )
-
-
             // document.getElementById('category-select').value = channel;
         }
 

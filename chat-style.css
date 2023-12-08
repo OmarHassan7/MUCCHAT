@@ -63,6 +63,7 @@ body {
   flex-direction: column;
   overflow-y: auto;
   margin-bottom: 20px;
+  justify-content: flex-end;
 }
 
 .message-container {

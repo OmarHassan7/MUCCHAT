@@ -43,7 +43,6 @@
         {
             // Broadcast the message to all connected clients
             foreach ($this->clients as $client) {
-                // Send the message along with the sender's name
                 $client->send($msg);
             }
         }

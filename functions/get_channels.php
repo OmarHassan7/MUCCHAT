@@ -21,6 +21,7 @@ if ($result->num_rows > 0) {
             'name' => $row['name'],
             'id' => $row['id'],
             'is_private' => $row['is_private'],
+            'participants'  => json_decode($row['participants'])
         );
     }
 }
