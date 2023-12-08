@@ -8,9 +8,9 @@ if ($mysqli->connect_error) {
 }
 
 // Retrieve messages from the database based on the specified category
-$category = isset($_GET['category']) ? $_GET['category'] : 'General';
-$stmt = $mysqli->prepare("SELECT * FROM messages WHERE category = ? ORDER BY timestamp DESC");
-$stmt->bind_param("s", $category);
+$channel_id = isset($_GET['channel_id']) ? $_GET['channel_id'] : 'General';
+$stmt = $mysqli->prepare("SELECT * FROM messages WHERE channel_id = ? ORDER BY timestamp DESC");
+$stmt->bind_param("s", $channel_id);
 $stmt->execute();
 $result = $stmt->get_result();
 
@@ -21,7 +21,7 @@ if ($result->num_rows > 0) {
         // Add each message to the array
         $messages[] = array(
             'sender' => $row['sender'],
-            'category' => $row['category'],
+            'channel_id' => $row['channel_id'],
             'message' => $row['message'],
         );
     }
@@ -34,4 +34,3 @@ $mysqli->close();
 // Return messages as JSON
 header('Content-Type: application/json');
 echo json_encode($messages);
-?>

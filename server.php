@@ -136,17 +136,17 @@ $conn->close();
 
             if (message !== '') {
                 // Encrypt the message using Caesar cipher with the specified shift value
-                const encryptedMessage = encryptMessage(message, shiftValue);
+                // const encryptedMessage = encryptMessage(message, shiftValue);
 
-                const fullMessage = `${userName}:${category}:${encryptedMessage}`;
-                ws.send(fullMessage);
+                // const fullMessage = `${userName}:${category}:${encryptedMessage}`;
+                // ws.send(fullMessage);
 
                 const data = {
                     sender: encodeURIComponent(userName),
-                    message: encodeURIComponent(encryptedMessage),
-                    category: encodeURIComponent(category)
+                    message: encodeURIComponent(message),
+                    channel_id: encodeURIComponent(window.current_channel_id)
                 };
-                fetch('insert_message.php', {
+                fetch('functions/insert_message.php', {
                         method: 'POST',
                         headers: {
                             'Content-type': 'application/x-www-form-urlencoded'
@@ -314,9 +314,7 @@ $conn->close();
         }
 
 
-        document.getElementById('send-button').addEventListener('click', function() {
-            sendMessage();
-        });
+        document.getElementById('send-button').addEventListener('click', sendMessage);
 
         document.getElementById('message-input').addEventListener('keydown', function(event) {
             if (event.key === 'Enter') {
@@ -373,6 +371,16 @@ $conn->close();
                 const elem = document.createElement("div");
                 elem.className = "conversation-link"
                 elem.textContent = channel.name;
+                elem.setAttribute("data-channel-id", channel.id);
+                elem.addEventListener('click', function(event) {
+
+                    event.preventDefault();
+                    const channel_id = this.getAttribute('data-channel-id');
+                    currentChannel = channel_id;
+                    window.current_channel_id = channel_id;
+                    console.log("cllll", channel_id)
+                    loadMessages(currentChannel);
+                });
                 channelsContainer.appendChild(elem);
             })
         }
@@ -381,10 +389,10 @@ $conn->close();
             fetch(`functions/get_channels.php`).then(res => res.json()).then(renderChannels)
         }
 
-        function loadMessages(channel) {
+        function loadMessages(channel_id) {
             clearChatMessages();
 
-            fetch(`functions/get_messages.php?category=${encodeURIComponent(channel)}`).then(res => res.json()).then(messages =>
+            fetch(`functions/get_messages.php?channelId=${encodeURIComponent(channel_id)}`).then(res => res.json()).then(messages =>
                 messages.reverse().forEach(function(message) {
                     const isCurrentUser = message.sender === userName;
                     const userClass = isCurrentUser ? 'user-message' : 'other-message';
@@ -393,17 +401,9 @@ $conn->close();
             )
 
 
-            document.getElementById('category-select').value = channel;
+            // document.getElementById('category-select').value = channel;
         }
 
-        document.querySelectorAll('.conversation-link').forEach(function(link) {
-            link.addEventListener('click', function(event) {
-                event.preventDefault();
-                const channel = this.getAttribute('data-channel');
-                currentChannel = channel;
-                loadMessages(currentChannel);
-            });
-        });
 
         function loadOnlineUsers() {
             ws.send("Get Online Users");
