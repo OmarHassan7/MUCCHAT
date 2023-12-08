@@ -41,6 +41,7 @@ if ($result->num_rows > 0) {
 
     // Get the remaining characters
     $name = $emailWithoutLast20;
+    $user_id = $_POST['idnumber'];
 } else {
     echo "";
 }
@@ -67,15 +68,18 @@ $conn->close();
                 <?php echo    $name; ?>!
             </div>
             <h3>Conversations</h3>
-            <a href="#" class="conversation-link" data-channel="General">General</a>
+            <div id="channels">
+
+            </div>
+            <!-- <a href="#" class="conversation-link" data-channel="General">General</a> -->
             <?php
-            if (substr($username, 0, 4) === "2211") {
-                echo '<a href="#" class="conversation-link" data-channel="PhysicalTherapy">Physical Therapy</a>';
-            } elseif (substr($username, 0, 4) === "2212") {
-                echo '<a href="#" class="conversation-link" data-channel="Engineering">Engineering</a>';
-            } elseif (substr($username, 0, 4) === "2213") {
-                echo '<a href="#" class="conversation-link" data-channel="Business">Business</a>';
-            }
+            // if (substr($username, 0, 4) === "2211") {
+            //     echo '<a href="#" class="conversation-link" data-channel="PhysicalTherapy">Physical Therapy</a>';
+            // } elseif (substr($username, 0, 4) === "2212") {
+            //     echo '<a href="#" class="conversation-link" data-channel="Engineering">Engineering</a>';
+            // } elseif (substr($username, 0, 4) === "2213") {
+            //     echo '<a href="#" class="conversation-link" data-channel="Business">Business</a>';
+            // }
             ?>
             <div id="online-users-container">
                 <h3>Online Users</h3>
@@ -102,7 +106,7 @@ $conn->close();
     </div>
 
     <script>
-        const ws = new WebSocket('ws://localhost:8080?username=<?php echo $name; ?>');
+        const ws = new WebSocket('ws://localhost:8080?username=<?php echo $name; ?>&user_id=<?php echo $user_id ?> ');
         const userName = "<?php echo $name; ?>";
         let currentChannel = "General";
 
@@ -181,16 +185,37 @@ $conn->close();
 
             const onlineUsersList = document.getElementById('online-users-list');
             const categorySelect = document.getElementById('category-select');
-
-            onlineUsers.split(',').forEach(username => {
+            console.log({
+                onlineUsers
+            });
+            console.log(onlineUsers[1]);
+            onlineUsers.forEach(({
+                name: username,
+                user_id
+            }) => {
                 const listItem = document.createElement('li');
                 const link = document.createElement('li');
 
                 link.setAttribute('data-channel', username);
+                link.setAttribute('data-username', username);
+                link.setAttribute('data-userid', user_id);
                 link.textContent = username;
                 link.setAttribute('class', 'online-user');
 
-                link.addEventListener('click', function() {
+                link.addEventListener('click', function(e) {
+                    const elem = e.target;
+                    fetch("functions/create_channel.php", {
+                        method: "POST",
+                        body: JSON.stringify({
+                            partcipants: [{
+                                id: <?php echo $username; ?>,
+                                name: "<?php echo $name; ?>"
+                            }, {
+                                id: +elem.getAttribute("data-userid"),
+                                name: elem.getAttribute("data-username")
+                            }]
+                        })
+                    })
                     clearChatMessages();
 
                     let option = categorySelect.querySelector(`option[value="${username}"]`);
@@ -204,6 +229,8 @@ $conn->close();
                         const conversationLink = document.createElement('a');
                         conversationLink.href = '#';
                         conversationLink.setAttribute('data-channel', username);
+                        conversationLink.setAttribute('data-username', username);
+                        conversationLink.setAttribute('data-userid', user_id);
                         conversationLink.textContent = username;
                         conversationLink.classList.add('conversation-link');
 
@@ -223,7 +250,7 @@ $conn->close();
                     event.preventDefault();
                     const channel = this.getAttribute('data-channel');
                     currentChannel = channel;
-                    loadMessages(currentChannel);
+                    // loadMessages(currentChannel);
                 });
 
                 listItem.appendChild(link);
@@ -298,36 +325,66 @@ $conn->close();
             }
         });
 
-        ws.onmessage = function(event) {
-            const parts = event.data.split(':');
-            const sender = parts[0];
-            const category = parts[1] || "General";
-            const message = parts.slice(2).join(':');
-            const isCurrentUser = sender === userName;
-            const userClass = isCurrentUser ? 'user-message' : 'other-message';
+        ws.onmessage = function(e) {
+            const {
+                event,
+                data
+            } = JSON.parse(e.data);
+
+            switch (event) {
+                case "online_users":
+                    return updateOnlineUsers(data);
+                default:
+                    throw new Error("unhandled case");
+            }
+            // const parts = event.data.split(':');
+            // const sender = parts[0];
+            // const category = parts[1] || "General";
+            // const message = parts.slice(2).join(':');
+            // const isCurrentUser = sender === userName;
+            // const userClass = isCurrentUser ? 'user-message' : 'other-message';
             // appendMessage(`${sender} (${category}): ${message}`, userClass);
 
             // Check if the message belongs to the current channel
-            if (category === currentChannel) {
-                appendMessage(`${sender} (${category}): ${message}`, userClass);
-            }
+            // if (category === currentChannel) {
+            //     appendMessage(`${sender} (${category}): ${message}`, userClass);
+            // }
 
-            if (event.data.startsWith('Online Users:')) {
-                const onlineUsers = event.data.replace('Online Users: ', '');
-                updateOnlineUsers(onlineUsers);
-            }
+            // if (event.data.startsWith('Online Users:')) {
+            //     const onlineUsers = event.data.replace('Online Users: ', '');
+
+            // }
         };
 
         window.onload = function() {
+            loadChannels();
             loadMessages(currentChannel);
             document.getElementById('welcome-message').style.display = 'block';
             loadOnlineUsers();
         };
 
+        function renderChannels(channels) {
+            console.log({
+                channels
+            })
+            const channelsContainer = document.getElementById("channels");
+            channelsContainer.innerHTML = "";
+            channels.forEach(channel => {
+                const elem = document.createElement("div");
+                elem.className = "conversation-link"
+                elem.textContent = channel.name;
+                channelsContainer.appendChild(elem);
+            })
+        }
+
+        function loadChannels() {
+            fetch(`functions/get_channels.php`).then(res => res.json()).then(renderChannels)
+        }
+
         function loadMessages(channel) {
             clearChatMessages();
 
-            fetch(`get_messages.php?category=${encodeURIComponent(channel)}`).then(res => res.json()).then(messages =>
+            fetch(`functions/get_messages.php?category=${encodeURIComponent(channel)}`).then(res => res.json()).then(messages =>
                 messages.reverse().forEach(function(message) {
                     const isCurrentUser = message.sender === userName;
                     const userClass = isCurrentUser ? 'user-message' : 'other-message';

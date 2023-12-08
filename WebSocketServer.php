@@ -28,10 +28,11 @@
 
             // Use the provided username or generate a unique identifier if not provided
             $username = isset($queryParameters['username']) ? $queryParameters['username'] : 'User' . $conn->resourceId;
+            $user_id = isset($queryParameters['user_id']) ? $queryParameters['user_id'] : '000' . $conn->resourceId;
+            echo $conn->resourceId;
+            $this->onlineUsers[$conn->resourceId] = ["name" => $username, "user_id" => $user_id];
 
-            $this->onlineUsers[$conn->resourceId] = $username;
-
-            echo "New connection! ({$username})\n";
+            echo "New connection! ({$username})  ({$user_id})\n";
 
             // Notify all clients about the updated list of online users
             $this->sendOnlineUsers();
@@ -71,7 +72,13 @@
             $onlineUsernames = array_values($this->onlineUsers);
 
             foreach ($this->clients as $client) {
-                $client->send("Online Users: " . implode(', ', array_diff($onlineUsernames, [$this->onlineUsers[$client->resourceId]])));
+                // $client->send("Online Users: " . array_diff($onlineUsernames, [$this->onlineUsers[$client->resourceId]]));
+                // $client->send($onlineUsernames);
+                $client->send(
+                    json_encode(
+                        ["event" => "online_users", "data" => $onlineUsernames]
+                    )
+                );
             }
         }
     }
