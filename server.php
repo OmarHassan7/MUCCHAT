@@ -131,25 +131,25 @@ $conn->close();
             shiftValue = parseInt(shiftInput.value) || 3; // Get the shift value or default to 3
 
             // Function to encrypt a message using Caesar cipher with the specified shift value
-            // function encryptMessage(text, shift) {
-            //     return [...text]
-            //         .map(char => {
-            //             const charCode = char.charCodeAt(0);
-            //             if (charCode >= 65 && charCode <= 90) {
-            //                 return String.fromCharCode((charCode - 65 + shift) % 26 + 65); // Uppercase letters
-            //             } else if (charCode >= 97 && charCode <= 122) {
-            //                 return String.fromCharCode((charCode - 97 + shift) % 26 + 97); // Lowercase letters
-            //             } else {
-            //                 return char; // Non-alphabetic characters
-            //             }
-            //         })
-            //         .join('');
-            // }
+            function encryptMessage(text, shift) {
+                return [...text]
+                    .map(char => {
+                        const charCode = char.charCodeAt(0);
+                        if (charCode >= 65 && charCode <= 90) {
+                            return String.fromCharCode((charCode - 65 + shift) % 26 + 65); // Uppercase letters
+                        } else if (charCode >= 97 && charCode <= 122) {
+                            return String.fromCharCode((charCode - 97 + shift) % 26 + 97); // Lowercase letters
+                        } else {
+                            return char; // Non-alphabetic characters
+                        }
+                    })
+                    .join('');
+            }
             if (message !== '') {
-
+                const fullMessage = encryptMessage(message, shiftValue)
                 const data = {
                     sender: encodeURIComponent(userName),
-                    message: encodeURIComponent(message),
+                    message: encodeURIComponent(fullMessage),
                     channel_id: encodeURIComponent(window.current_channel_id)
                 };
                 fetch('functions/insert_message.php', {
@@ -211,7 +211,7 @@ $conn->close();
                 link.setAttribute('data-channel', username);
                 link.setAttribute('data-username', username);
                 link.setAttribute('data-userid', user_id);
-                link.textContent = username;
+                link.textContent = username + " " + user_id;
                 link.setAttribute('class', 'online-user');
 
                 link.addEventListener('click', function(e) {
@@ -244,39 +244,6 @@ $conn->close();
 
                     clearChatMessages();
 
-                    // let option = categorySelect.querySelector(`option[value="${username}"]`);
-                    // if (!option) {
-                    //     option = document.createElement('option');
-                    //     option.value = username;
-                    //     option.textContent = username;
-                    //     categorySelect.appendChild(option);
-
-                    //     // Create a new conversation link
-                    //     const conversationLink = document.createElement('a');
-                    //     conversationLink.href = '#';
-                    //     conversationLink.setAttribute('data-channel', username);
-                    //     conversationLink.setAttribute('data-username', username);
-                    //     conversationLink.setAttribute('data-userid', user_id);
-                    //     conversationLink.textContent = username;
-                    //     conversationLink.classList.add('conversation-link');
-
-                    //     // Add click event listener to the new conversation link
-                    //     conversationLink.addEventListener('click', function(event) {
-                    //         event.preventDefault();
-                    //         const channel = this.getAttribute('data-channel');
-                    //         currentChannel = channel;
-                    //         loadMessages(currentChannel);
-                    //     });
-
-                    //     // Append the new conversation link to the conversations list
-                    //     document.getElementById('sidebar').insertBefore(conversationLink, document.getElementById('online-users-container'));
-                    // }
-
-                    // option.selected = true;
-                    // event.preventDefault();
-                    // const channel = this.getAttribute('data-channel');
-                    // currentChannel = channel;
-                    // // loadMessages(currentChannel);
                 });
 
                 listItem.appendChild(link);
