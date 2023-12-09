@@ -76,16 +76,10 @@ $conn->close();
             <div id="channels">
 
             </div>
-            <!-- <a href="#" class="conversation-link" data-channel="General">General</a> -->
-            <?php
-            // if (substr($username, 0, 4) === "2211") {
-            //     echo '<a href="#" class="conversation-link" data-channel="PhysicalTherapy">Physical Therapy</a>';
-            // } elseif (substr($username, 0, 4) === "2212") {
-            //     echo '<a href="#" class="conversation-link" data-channel="Engineering">Engineering</a>';
-            // } elseif (substr($username, 0, 4) === "2213") {
-            //     echo '<a href="#" class="conversation-link" data-channel="Business">Business</a>';
-            // }
-            ?>
+            Search by Id
+            <input type="text" id="search">
+            <input type="submit" value="sub" id="search-btn">
+
             <div id="online-users-container">
                 <h3>Online Users</h3>
                 <div id="online-users"></div>
@@ -96,13 +90,6 @@ $conn->close();
             <div id="chat-messages"></div>
             <div>
                 <input type="text" id="message-input" placeholder="Type your message..." class="input">
-                <!-- <select id="category-select">
-                    <option value="General">General</option>
-                    <option value="Engineering">Engineering</option>
-                    <option value="PhysicalTherapy">Physical Therapy</option>
-                    <option value="Business">Business</option>
-                </select> -->
-                <!-- Add input field for shift value -->
                 <label for="shift-input">Shift Value:</label>
                 <input type="number" id="shift-input" min="1" value="3" class="input">
                 <button id="send-button" class="button">Send</button>
@@ -121,6 +108,8 @@ $conn->close();
             document.getElementById('welcome-message').style.display = 'block';
             loadOnlineUsers();
         };
+
+
 
         function sendMessage() {
             const messageInput = document.getElementById('message-input');
@@ -187,8 +176,22 @@ $conn->close();
             const chatMessages = document.getElementById('chat-messages');
             chatMessages.innerHTML = '';
         }
-
+        onlineUsers = [];
+        const searchInput = document.getElementById('search');
+        let searchVal = ''
+        const searchBtn = document.getElementById("search-btn");
         // controller
+        searchInput.addEventListener("keyup", function(e) {
+            searchVal = e.target.value;
+            const filteredOnlineUsers = onlineUsers.filter(user => {
+                console.log("c1", user.user_id);
+                console.log("c2", searchVal);
+                return user.user_id.includes(searchVal);
+            });
+            console.log("A7a", filteredOnlineUsers);
+            updateOnlineUsers(filteredOnlineUsers);
+        })
+
 
 
         function updateOnlineUsers(onlineUsers) {
@@ -328,6 +331,7 @@ $conn->close();
 
             switch (event) {
                 case "online_users":
+                    onlineUsers = data;
                     return updateOnlineUsers(data);
                 case "message":
                     const {
