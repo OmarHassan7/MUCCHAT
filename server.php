@@ -78,7 +78,6 @@ $conn->close();
             </div>
             Search by Id
             <input type="text" id="search">
-            <input type="submit" value="sub" id="search-btn">
 
             <div id="online-users-container">
                 <h3>Online Users</h3>
@@ -179,7 +178,6 @@ $conn->close();
         onlineUsers = [];
         const searchInput = document.getElementById('search');
         let searchVal = ''
-        const searchBtn = document.getElementById("search-btn");
         // controller
         searchInput.addEventListener("keyup", function(e) {
             searchVal = e.target.value;
@@ -339,6 +337,7 @@ $conn->close();
                     } = data;
                     // appendMessage(`${sender} (${category}): ${message}`);
                     loadMessages(window.current_channel_id);
+                    loadChannels()
                     break;
                 default:
                     throw new Error("unhandled case");
